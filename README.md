@@ -11,7 +11,7 @@
 
 
 
-## Cross-validation methods
+# Cross-validation methods
 
 This project is currently in development. More CV methods will be added shortly.
 
@@ -20,3 +20,8 @@ This project is currently in development. More CV methods will be added shortly.
 - [x] ECV
 - [ ] GCV
 - [ ] CGCV
+
+
+# Usage
+
+Check out Jupyter notebook [demo.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/demo.ipynb) about how to apply ECV on risk estimation and hyperparameter tuning for ensemble learning.
