@@ -1,4 +1,4 @@
-# ensemble-cross-validation
+# Ensemble-cross-validation
 
 
 `sklearn_ensemble_cv` is a Python module for performing accurate and efficient ensemble cross-validation methods from various [projects](https://jaydu1.github.io/overparameterized-ensembling/).
