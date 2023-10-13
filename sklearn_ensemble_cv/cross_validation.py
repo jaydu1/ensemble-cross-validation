@@ -10,153 +10,6 @@ n_jobs = 16
 import warnings
 warnings.filterwarnings('ignore') 
 
-
-
-
-
-############################################################################
-#
-# Empirical evaluation
-#
-############################################################################
-    
-   
-def comp_empirical_risk(X, Y, X_test, Y_test, phi_s, method, param, 
-                        M, data_val=None, replace=True, bootstrap=False,
-                        return_allM=False, return_pred_diff=False, **kwargs):
-    n,p = X.shape
-    
-    if len(Y_test.shape)<2:
-        Y_test = Y_test[:,None]
-
-    if data_val is not None:
-        X_val, Y_val = data_val
-        Y_val = Y_val.reshape((-1,1))
-        Y_hat = np.zeros((Y_test.shape[0]+Y_val.shape[0], M))
-        X_eval = np.r_[X_val, X_test]
-    else:
-        Y_hat = np.zeros((Y_test.shape[0], M))
-        X_eval = X_test
-        
-    if replace:
-        k = int(p/phi_s)
-        ids_list = [np.sort(np.random.choice(n,k,replace=bootstrap)) for j in range(M)]
-    else:
-        k = np.floor(n/M)
-        assert 1 <= k <= n
-        ids_list = np.array_split(np.random.permutation(np.arange(n)), M)
-        
-    with Parallel(n_jobs=n_jobs, max_nbytes=None, verbose=0) as parallel:
-        res = parallel(
-            delayed(fit_predict)(X[ids,:], Y[ids,:], X_eval, method, param, **kwargs)
-            for ids in ids_list
-        )
-    Y_hat = np.concatenate(res, axis=-1)
-
-        
-    if return_allM:
-        Y_hat = np.cumsum(Y_hat, axis=1) / np.arange(1,M+1)
-        idM = np.arange(M)
-    else:
-        Y_hat = np.mean(Y_hat, axis=1, keepdims=True)
-        idM = 0
-        
-    if return_pred_diff:
-        risk_test = (Y_hat[-Y_test.shape[0]:,:]-Y_test)[:,idM]
-    else:
-        risk_test = np.mean((Y_hat[-Y_test.shape[0]:,:]-Y_test)**2, axis=0)[idM]
-        
-    if data_val is not None:
-        risk_val = np.mean((Y_hat[:-Y_test.shape[0],:]-Y_val)**2, axis=0)[idM]
-        return risk_val, risk_test
-    else:
-        return risk_test
-    
-    
-def cross_validation(
-    X, Y, X_test, Y_test, method, param, M, nu=0.5, 
-    replace=True, bootstrap=False, 
-    val_size=None, Kfold=False, k_list=None, return_full=False, **kwargs):
-    assert 0 < nu < 1
-    n, p = X.shape
-    
-    if Kfold is False:
-        if val_size is None:
-            n_val = int(2 * np.sqrt(n))
-        else:
-            n_val = int(n * val_size)
-
-        ids_val_list = [np.sort(np.random.choice(n,n_val,replace=False))]
-        ids_train_list = [np.setdiff1d(np.arange(n),ids_val_list[0])]
-    else:
-        kf = KFold(n_splits=Kfold)
-        ids_train_list, ids_val_list = list(zip(*kf.split(np.arange(n))))
-        n_val = len(ids_train_list[0])
-    
-    n_train = n - n_val
-    n_base = int(n_train**nu)
-    if k_list is not None:
-        k_list = np.array(k_list)
-        k_list = k_list[k_list<=n_train]
-    else:
-        if replace:
-            k_list = np.arange(n_base, n_train+1, n_base)
-            if n_train!=k_list[-1]:
-                k_list = np.append(k_list, n_train)
-        else:
-            k_list = n_train / np.arange(1,M+1)
-            k_list = k_list[k_list>=n_base]
-    if 0 not in k_list:
-        k_list = np.insert(k_list,0,0)
-        
-    res_val = []
-    res_test = []
-    for ids_train, ids_val in zip(ids_train_list, ids_val_list):
-        X_train, Y_train = X[ids_train,:], Y[ids_train,:]
-        X_val, Y_val = X[ids_val,:], Y[ids_val,:]        
-
-        _res_val = np.full((len(k_list),M), np.inf)
-        _res_test = np.full((len(k_list),X_test.shape[0],M), np.inf)
-
-        for j,k in enumerate(k_list):
-            # null predictor
-            if k==0:
-                mu = 0.5 if method=='logistic' else 0.
-                _res_val[j,:] = np.mean((Y-mu)**2)
-                _res_test[j,:,:] = (mu - Y_test)
-                continue
-                
-            if replace:
-                _res_val[j,:], _res_test[j,:,:] = comp_empirical_risk(
-                    X_train, Y_train, X_test, Y_test, 
-                    p/k, method, param, M, data_val=(X_val, Y_val), 
-                    replace=replace, bootstrap=bootstrap, 
-                    return_allM=True, return_pred_diff=True, **kwargs
-                )
-            else:
-                m = j + 1
-                _res_val[j,:m], _res_test[j,:,:m] = comp_empirical_risk(
-                    X_train, Y_train, X_test, Y_test, 
-                    p/k, method, param, m, data_val=(X_val, Y_val), 
-                    replace=replace, bootstrap=bootstrap, 
-                    return_allM=True, return_pred_diff=True, **kwargs
-                )
-                _res_val[j,m:] = _res_val[j,m-1]
-                _res_test[j,:,m:] = _res_test[j,:,m-1]
-        
-        res_val.append(_res_val)
-        res_test.append(_res_test)
-        
-    res_val = np.mean(np.array(res_val), axis=0)
-    res_test = np.mean(np.mean(np.array(res_test), axis=0)**2, axis=1)
-    
-    
-    if return_full:
-        return k_list, res_val, res_test
-    else:
-        j_cv = np.argmin(res_val, axis=0)
-        risk_cv = res_test[j_cv, np.arange(M)]
-        return k_list[j_cv], risk_cv
     
 
 
@@ -282,9 +135,9 @@ def cross_validation_ecv(
         res_risk[i, :] = np.r_[res]
 
     if return_df:
-        cols = np.char.add(['risk_ecv']*M, np.char.mod('%d', 1+np.arange(M)))
+        cols = np.char.add(['risk_ecv-']*M, np.char.mod('%d', 1+np.arange(M)))
         if valid:
-            cols = np.append(cols, np.char.add(['risk_test']*M, np.char.mod('%d', 1+np.arange(M))))
+            cols = np.append(cols, np.char.add(['risk_test-']*M, np.char.mod('%d', 1+np.arange(M))))
         res_ecv = pd.concat([grid, 
                              pd.DataFrame(res_risk, columns=cols)
                              ] ,axis=1)
