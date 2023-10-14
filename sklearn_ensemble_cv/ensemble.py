@@ -47,7 +47,7 @@ class Ensemble(BaggingRegressor):
         return Y_hat
     
 
-    def compute_risk(self, X, Y, M_test=None, return_df=False, n_jobs=-1, **kwargs):
+    def compute_risk(self, X, Y, M_test=None, return_df=False, n_jobs=-1, **kwargs_est):
         if M_test is None:
             M_test = self.n_estimators
         if M_test>self.n_estimators:
@@ -55,12 +55,10 @@ class Ensemble(BaggingRegressor):
         if Y.ndim==1:
             Y = Y[:,None]
 
-        # if reduce:
-        #     Y_hat = self.predict(X).reshape(-1,1)
-        #     risk = np.mean((Y_hat - Y)**2, axis=0)
-        # else:
         Y_hat = self.predict_individual(X, n_jobs)
-        risk = np.mean((np.cumsum(Y_hat, axis=1) / np.arange(1,M_test+1) - Y)**2, axis=0)
+        Y_hat = np.cumsum(Y_hat, axis=1) / np.arange(1,M_test+1)
+        err_eval = (Y_hat - Y)**2
+        risk = risk_estimate(err_eval, axis=0, **kwargs_est)
 
         if return_df:
             df = pd.DataFrame({'M':np.arange(1,M_test+1), 'risk':risk})
