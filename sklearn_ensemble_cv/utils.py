@@ -1,4 +1,7 @@
 import numpy as np
+import pandas as pd
+from itertools import product
+
 
 
 def risk_estimate(sq_err, method='AVG', eta=None, **kwargs):
@@ -39,35 +42,57 @@ def estimate_null_risk(Y):
     return np.mean((Y-mu)**2)
 
 
-import pandas as pd
-from itertools import product
+def split_grid(raw_grid, raw_kwarg):
+    '''
+    Split the grid and kwarg into two dictionaries.
+
+    Parameters
+    ----------
+    raw_grid : dict
+        A dictionary of lists of parameters, possibly with fixed parameters.
+    raw_kwarg : dict
+        A dictionary of fixed parameters.
+    
+    Returns
+    -------
+    grid : dict
+        A dictionary of lists of parameters to tune.
+    kwarg : dict
+        A dictionary of fixed parameters.
+    '''
+
+    grid = {i:j for i,j in raw_grid.items() if not np.isscalar(j)}
+    kwarg = {i:j for i,j in raw_grid.items() if np.isscalar(j) or len(j)==1}
+
+    if raw_kwarg.keys() & kwarg.keys():
+        raise ValueError('Grid and kwarg cannot have common keys.')
+    kwarg = {**kwarg, **raw_kwarg}
+    return grid, kwarg
 
 
-def make_grid(dict_params):
+def make_grid(dict_regr, dict_ensemble):
     '''
     Create a dataframe with all combinations of parameters in dict_params.
 
     Parameters
     ----------
-    dict_params : dict
-        A dictionary of parameter names and their possible values.
+    dict_regr : dict
+        A dictionary of parameter names and their possible values for the base regressor.
+    dict_ensemble : dict
+        A dictionary of parameter names and their possible values for the ensemble model.
 
     Returns
     -------
-    df : pandas.DataFrame
-        A dataframe with all combinations of parameters.
-    '''
-
-    dtypes = {k: type(v[0]) for k, v in dict_params.items()}
-
+    config_list_regr : list
+        A list of dictionaries, where each dictionary represents one configuration for the base regressor.
+    config_list_ensemble : list
+        A list of dictionaries, where each dictionary represents one configuration for the ensemble model.
+    '''    
     # Get all combinations of parameter values
-    param_values = list(product(*dict_params.values()))
+    param_values = list(product(*(list(dict_regr.values())+list(dict_ensemble.values()))))
 
     # Create a list of dictionaries, where each dictionary represents one configuration
-    config_list = [dict(zip(dict_params.keys(), values)) for values in param_values]
+    config_list_regr = [dict(zip(dict_regr.keys(), values[:len(dict_regr)])) for values in param_values]
+    config_list_ensemble = [dict(zip(dict_ensemble.keys(), values[len(dict_regr):])) for values in param_values]
 
-    # Convert the list of dictionaries to a dataframe    
-    df = pd.DataFrame(config_list).astype(dtypes)
-
-    return df
-
+    return config_list_regr, config_list_ensemble

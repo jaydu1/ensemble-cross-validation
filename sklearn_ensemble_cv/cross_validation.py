@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, GridSearchCV
 from sklearn_ensemble_cv.ensemble import Ensemble
-from sklearn_ensemble_cv.utils import estimate_null_risk
+from sklearn_ensemble_cv.utils import estimate_null_risk, split_grid, make_grid
 from sklearn.tree import DecisionTreeRegressor
 from joblib import Parallel, delayed
 n_jobs = 16
@@ -10,7 +10,13 @@ n_jobs = 16
 import warnings
 warnings.filterwarnings('ignore') 
 
-    
+
+def fit_ensemble(regr=None,kwargs_regr={},kwargs_ensemble={}):
+    if regr is None:
+        regr = DecisionTreeRegressor
+    return Ensemble(estimator=regr(**kwargs_regr), **kwargs_ensemble)
+
+
 
 
 ############################################################################
@@ -56,13 +62,12 @@ def comp_empirical_ecv(
     kwargs_est = {**{'re_method':'AVG', 'eta':None}, **kwargs}
     if M0>M:
         raise ValueError('M0 must be less than or equal to M.')
-    if regr is None:
-        regr = DecisionTreeRegressor
+    kwargs_ensemble['n_estimators'] = M
     # # null predictor
     # if np.isinf(phi_s):
     #     risk_ecv = np.full(M if np.isscalar(M) else len(M), estimate_null_risk(Y))
     # else:
-    regr = Ensemble(estimator=regr(**kwargs_regr), n_estimators=M, **kwargs_ensemble).fit(X_train, Y_train)
+    regr = fit_ensemble(regr,kwargs_regr,kwargs_ensemble).fit(X_train, Y_train)
     risk_ecv = regr.compute_ecv_estimate(X_train, Y_train, M, M0=M0, n_jobs=n_jobs, **kwargs_est)
 
 
@@ -76,11 +81,9 @@ def comp_empirical_ecv(
 
 
 
-def cross_validation_ecv(
-        X_train, Y_train, grid,
-        regr, kwargs_regr={},
-        M=20, M0=20,  kwargs_ensemble={}, 
-        M_max=np.inf, delta=0., return_df=False, n_jobs=-1, X_val=None, Y_val=None, **kwargs
+def ECV(
+        X_train, Y_train, regr, grid_regr={}, grid_ensemble={}, kwargs_regr={}, kwargs_ensemble={},
+        M=20, M0=20, M_max=np.inf, delta=0., return_df=False, n_jobs=-1, X_val=None, Y_val=None, **kwargs
         ):
     '''
     Cross-validation for ensemble models using the empirical ECV estimate.
@@ -95,12 +98,10 @@ def cross_validation_ecv(
         The base estimator to use for the ensemble model.
     kwargs_regr : dict, optional
         Additional keyword arguments for the base estimator.
-    M : int, optional
-        The ensemble size to build.
-    M0 : int, optional
-        The number of estimators to use for the ECV estimate.    
     kwargs_ensemble : dict, optional
-        Additional keyword arguments for the ensemble model.    
+        Additional keyword arguments for the ensemble model.
+    M0 : int, optional
+        The number of estimators to use for the ECV estimate.
     M_max : int, optional
         The maximum ensemble size to consider for the tuned ensemble.
     delta : float, optional
@@ -113,20 +114,26 @@ def cross_validation_ecv(
         The validation samples. It may be useful to be used for comparing the 
         performance of ECV with other cross-validation methods that requires sample-splitting.
     '''
+    if not grid_regr and not grid_ensemble:
+        raise ValueError('grid_regr and grid_ensemble cannot both be empty.')
     
-    keys_to_keep = ['max_samples', 'max_features']
+    
+    if 'n_estimators' in grid_ensemble:
+        raise ValueError('n_estimators should not be included in grid_ensemble.')
 
-    n_grid = grid.shape[0]
-    dtypes = grid.dtypes
+    grid_regr, kwargs_regr = split_grid(grid_regr, kwargs_regr)
+    grid_ensemble, kwargs_ensemble = split_grid(grid_ensemble, kwargs_ensemble)
+    grid_regr, grid_ensemble = make_grid(grid_regr, grid_ensemble)
+
     valid = X_val is not None and Y_val is not None
     n_res = 2*M if valid else M
+    n_grid = len(grid_regr)
     res_risk = np.full((n_grid,n_res), np.inf)
     
     for i in range(n_grid):
-        params = grid.iloc[i].to_dict()
-        params_ensemble = {k: dtypes[k].type(v) for k, v in params.items() if k in keys_to_keep}
-        params_regr = {k: dtypes[k].type(v) for k, v in params.items() if k not in keys_to_keep}
-        
+        params_ensemble = grid_ensemble[i]
+        params_regr = grid_regr[i]
+
         _, res = comp_empirical_ecv(
             X_train, Y_train, 
             regr, {**kwargs_regr, **params_regr}, 
@@ -138,7 +145,7 @@ def cross_validation_ecv(
         cols = np.char.add(['risk_ecv-']*M, np.char.mod('%d', 1+np.arange(M)))
         if valid:
             cols = np.append(cols, np.char.add(['risk_test-']*M, np.char.mod('%d', 1+np.arange(M))))
-        res_ecv = pd.concat([grid, 
+        res_ecv = pd.concat([pd.DataFrame(grid_regr), pd.DataFrame(grid_ensemble),
                              pd.DataFrame(res_risk, columns=cols)
                              ] ,axis=1)
     else:
@@ -148,7 +155,7 @@ def cross_validation_ecv(
             res_ecv = res_risk
 
     j = np.nanargmin(2 * res_risk[:,1] - res_risk[:,0])
-    best_params_ = grid.iloc[j].to_dict()
+
     if delta==0.:
         M_hat = np.inf
     else:
@@ -157,7 +164,8 @@ def cross_validation_ecv(
 
     info_ecv = {
         'delta': delta,
-        'best_params': best_params_,
+        'best_params_regr': {**params_regr, **grid_regr[j]},
+        'best_params_ensemble': {**params_ensemble, **grid_ensemble[j]},
         'best_n_estimators': best_n_estimators_,
         'M_max':M_max
     }

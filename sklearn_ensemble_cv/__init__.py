@@ -1,6 +1,6 @@
 __all__ = ['ensemble_cv']
 
-from sklearn_ensemble_cv.cross_validation import comp_empirical_ecv, cross_validation_ecv
+from sklearn_ensemble_cv.cross_validation import comp_empirical_ecv, ECV
 from sklearn_ensemble_cv.ensemble import Ensemble
 from sklearn_ensemble_cv.utils import make_grid
 
