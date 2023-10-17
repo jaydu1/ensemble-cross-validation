@@ -16,7 +16,7 @@
 This project is currently in development. More CV methods will be added shortly.
 
 - [x] split CV
-- [ ] K-fold CV
+- [x] K-fold CV
 - [x] ECV
 - [ ] GCV
 - [ ] CGCV
