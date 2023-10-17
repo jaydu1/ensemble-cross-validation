@@ -1,6 +1,14 @@
+import os
+import random
 import numpy as np
 import pandas as pd
 from itertools import product
+
+
+def reset_random_seeds(seed):
+    os.environ['PYTHONHASHSEED']=str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 

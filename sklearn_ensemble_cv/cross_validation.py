@@ -24,7 +24,7 @@ def fit_ensemble(regr=None,kwargs_regr={},kwargs_ensemble={}):
 ############################################################################
 
 def comp_empirical_val(
-        X_train, Y_train, X_val, Y_val, regr, kwargs_regr={}, kwargs_ensemble={}, M=20, M0=20,
+        X_train, Y_train, X_val, Y_val, regr, kwargs_regr={}, kwargs_ensemble={}, M=20,
         n_jobs=-1, X_test=None, Y_test=None, _check_input=True, **kwargs_est, 
         ):
     '''
@@ -44,8 +44,6 @@ def comp_empirical_val(
         Additional keyword arguments for the ensemble model.
     M : int, optional
         The maximum ensemble size to consider.
-    M0 : int, optional
-        The number of estimators to use for the ECV estimate.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
     X_test,Y_test : numpy.array, optional
@@ -61,8 +59,6 @@ def comp_empirical_val(
         The empirical ECV estimate.
     '''
     if _check_input:
-        if M0>M:
-            raise ValueError('M0 must be less than or equal to M.')
         kwargs_regr, kwargs_ensemble, kwargs_est = check_input(kwargs_regr, kwargs_ensemble, kwargs_est, M)
 
     regr = fit_ensemble(regr,kwargs_regr,kwargs_ensemble).fit(X_train, Y_train)
@@ -129,8 +125,9 @@ def splitCV(
         params_regr = grid_regr[i]
         
         _, res = comp_empirical_val(
-            _X_train, _Y_train, _X_val, _Y_val, regr, kwargs_regr, kwargs_ensemble, M,
-            n_jobs, X_test, Y_test,  _check_input=False, **kwargs_est
+            _X_train, _Y_train, _X_val, _Y_val, regr, 
+            {**kwargs_regr, **params_regr}, {**kwargs_ensemble, **params_ensemble},
+            M, n_jobs, X_test, Y_test,  _check_input=False, **kwargs_est
         )
         res_risk[i, :] = np.r_[res]
 
@@ -154,6 +151,7 @@ def splitCV(
         'best_params_regr': {**kwargs_regr, **grid_regr[j]},
         'best_params_ensemble': {**kwargs_ensemble, **grid_ensemble[j]},
         'best_n_estimators': M_best,
+        'best_params_index':j,
         'best_score':res_risk[j, M_best-1],
         'split_params':{
             'index_train':id_train, 
@@ -223,8 +221,9 @@ def KFoldCV(
             params_regr = grid_regr[i]
             
             _, res = comp_empirical_val(
-                _X_train, _Y_train, _X_val, _Y_val, regr, kwargs_regr, kwargs_ensemble, M,
-                n_jobs, X_test, Y_test,  _check_input=False, **kwargs_est
+                _X_train, _Y_train, _X_val, _Y_val, regr, 
+                {**kwargs_regr, **params_regr}, {**kwargs_ensemble, **params_ensemble}, 
+                M, n_jobs, X_test, Y_test,  _check_input=False, **kwargs_est
             )
             res_risk_all[i, :, fold] = np.r_[res]
 
@@ -250,8 +249,9 @@ def KFoldCV(
         'best_params_regr': {**kwargs_regr, **grid_regr[j]},
         'best_params_ensemble': {**kwargs_ensemble, **grid_ensemble[j]},
         'best_n_estimators': M_best,
+        'best_params_index':j,
         'best_score':res_risk[j, M_best-1],
-        
+
         'val_score':res_risk_all[:,:M],
         'test_score':None if not test else res_risk_all[:,M:],
         'split_params':{
@@ -311,9 +311,9 @@ def comp_empirical_ecv(
         if M0>M:
             raise ValueError('M0 must be less than or equal to M.')
         if np.isinf(M_max):
-            M_max = np.append(np.arange(M), np.inf)
+            M_max = np.append(np.arange(M)+1, np.inf)
         elif np.isscalar(M_max):
-            M_max = np.arange(M_max)
+            M_max = np.arange(M_max)+1
 
         kwargs_regr, kwargs_ensemble, kwargs_est = check_input(kwargs_regr, kwargs_ensemble, kwargs_est, M)
     regr = fit_ensemble(regr,kwargs_regr,kwargs_ensemble).fit(X_train, Y_train)
@@ -371,9 +371,9 @@ def ECV(
     if M0>M:
         raise ValueError('M0 must be less than or equal to M.')
     if np.isinf(M_max):
-        M_max = np.append(np.arange(M), np.inf)
+        M_max = np.append(np.arange(M)+1, np.inf)
     elif np.isscalar(M_max):
-        M_max = np.arange(M_max)
+        M_max = np.arange(M_max)+1
     n_M_max = len(M_max)
 
     test = X_test is not None and Y_test is not None
@@ -413,7 +413,7 @@ def ECV(
     else:
         M_hat = int(np.ceil(2 / (delta + 2/M_max[-1]*(res_risk[j,0] - res_risk[j,1])) * 
                             (res_risk[j,0] - res_risk[j,1])))
-    M_best_ext = np.minimum(M_hat, M_max[-1]+1)
+    M_best_ext = np.minimum(M_hat, M_max[-1])
     if not np.isinf(M_best_ext):
         M_best_ext = int(M_best_ext)
     
@@ -421,6 +421,7 @@ def ECV(
         'best_params_regr': {**kwargs_regr, **grid_regr[j]},
         'best_params_ensemble': {**kwargs_ensemble, **grid_ensemble[j]},
         'best_n_estimators': M_best,
+        'best_params_index':j,
         'best_score':res_risk[j, M_best-1],
 
         'delta': delta,
