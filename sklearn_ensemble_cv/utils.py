@@ -129,7 +129,7 @@ def make_grid(dict_regr, dict_ensemble=None):
         return config_list_regr
 
 
-def process_grid(grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble):
+def process_grid(grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble, kwargs_est, M):
     '''
     Process the grid and kwarg into two dictionaries.
 
@@ -140,11 +140,69 @@ def process_grid(grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble):
     kwargs_regr : dict
         A dictionary of fixed parameters for the base regressor.
     grid_ensemble : dict
-        A dictionary of lists of parameters for the ensemble model., possibly with fixed parameters.
+        A dictionary of lists of parameters for the ensemble model, possibly with fixed parameters.
     kwargs_ensemble : dict
-        A dictionary of fixed parameters for the ensemble model..
+        A dictionary of fixed parameters for the ensemble model.
+    kwargs_est : dict
+        Additional keyword arguments for the risk estimate.
+    M : int
+        The ensemble size.
+
+    Returns
+    -------
+    grid_regr : dict
+        A dictionary of lists of parameters to tune for the base regressor.
+    kwargs_regr : dict
+        A dictionary of fixed parameters for the base regressor.
+    grid_ensemble : dict
+        A dictionary of lists of parameters to tune for the ensemble model.
+    kwargs_ensemble : dict
+        A dictionary of fixed parameters for the ensemble model.
+    kwargs_est : dict
+        Additional keyword arguments for the risk estimate.    
     '''
-    grid_regr, kwargs_regr = split_grid(grid_regr, kwargs_regr)
-    grid_ensemble, kwargs_ensemble = split_grid(grid_ensemble, kwargs_ensemble)
-    grid_regr, grid_ensemble = make_grid(grid_regr, grid_ensemble)
-    return grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble
+    if not grid_regr and not grid_ensemble:
+        raise ValueError('grid_regr and grid_ensemble cannot both be empty.')
+    
+    if type(grid_regr) is not type(grid_ensemble):
+        raise ValueError('grid_regr and grid_ensemble must be of the same type.')
+    
+    if isinstance(grid_regr, dict):
+        grid_regr, kwargs_regr = split_grid(grid_regr, kwargs_regr)
+        grid_ensemble, kwargs_ensemble = split_grid(grid_ensemble, kwargs_ensemble)
+        grid_regr, grid_ensemble = make_grid(grid_regr, grid_ensemble)
+
+    kwargs_ensemble = {**{'random_state':0}, **kwargs_ensemble}
+    kwargs_regr, kwargs_ensemble, kwargs_est = check_input(kwargs_regr, kwargs_ensemble, kwargs_est, M)
+    return grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble, kwargs_est
+
+
+
+def check_input(kwargs_regr, kwargs_ensemble, kwargs_est, M):
+    '''
+    Check the input parameters for the risk estimate.
+
+    Parameters
+    ----------
+    kwargs_regr : dict
+        A dictionary of fixed parameters for the base regressor.
+    kwargs_ensemble : dict
+        A dictionary of fixed parameters for the ensemble model.
+    kwargs_est : dict
+        Additional keyword arguments for the risk estimate.
+    M : int
+        The ensemble size.
+
+    Returns
+    -------
+    kwargs_regr : dict
+        The updated fixed parameters for the base regressor.
+    kwargs_ensemble : dict
+        The updated fixed parameters for the ensemble model.
+    kwargs_est : dict
+        The updated additional keyword arguments for the risk estimate.
+    '''
+    kwargs_est = {**{'re_method':'AVG', 'eta':None}, **kwargs_est}
+    kwargs_ensemble['n_estimators'] = M
+
+    return kwargs_regr, kwargs_ensemble, kwargs_est
