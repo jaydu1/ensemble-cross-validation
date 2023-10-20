@@ -11,6 +11,7 @@
 
 
 ```python
+from sklearn.tree import DecisionTreeRegressor
 from sklearn_ensemble_cv import ECV
 
 # Hyperparameters for the base regressor
@@ -25,8 +26,7 @@ grid_ensemble = {
 
 res_ecv, info_ecv = ECV(
     X_train, y_train, DecisionTreeRegressor, grid_regr, grid_ensemble, 
-    X_test=X_test, Y_test=y_test,
-    M=50, M0=25, return_df=True
+    M=50, M_max=100, return_df=True
 )
 ```
 
