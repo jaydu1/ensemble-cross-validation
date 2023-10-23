@@ -1,12 +1,13 @@
 __all__ = ['ensemble_cv']
 
-from sklearn_ensemble_cv.cross_validation import comp_empirical_ecv, ECV
+from sklearn_ensemble_cv.cross_validation import comp_empirical_ecv, ECV, GCV, splitCV, KFoldCV
 from sklearn_ensemble_cv.ensemble import Ensemble
 from sklearn_ensemble_cv.utils import reset_random_seeds
+from sklearn_ensemble_cv.simu_data import generate_data
 
 
 __license__ = "MIT"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Jin-Hong Du"
 __email__ = "jinhongd@andraw.cmu.edu"
 __maintainer__ = "Jin-Hong Du"

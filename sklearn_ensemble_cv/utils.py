@@ -63,6 +63,54 @@ def risk_estimate(sq_err, axis=None, method='AVG', **kwargs):
     return risk
 
 
+def degree_of_freedom(regr, X):
+    '''
+    Compute the degree of freedom of a fitted regressor.
+    
+    Parameters
+    ----------
+    regr : sklearn regressor
+        The fitted regressor. Can be Ridge, Lasso, or ElasticNet.
+    X : 2d-array
+        The input data.
+
+    Returns
+    -------
+    dof : float
+        The degree of freedom.
+    '''
+    k = X.shape[0]
+    if regr.fit_intercept:
+        X = np.c_[np.ones((k,1)), X]
+        nz_coef = np.r_[regr.intercept_!=0, regr.coef_!=0]
+    else:
+        nz_coef = regr.coef_!=0
+    
+    lam = regr.alpha
+    method = regr.__class__.__name__
+
+    if method == 'Ridge':
+        svds = np.linalg.svd(X, compute_uv=False)
+        evds = svds[:k]**2
+        dof = np.sum(evds/(evds + lam))
+
+    elif method == 'Lasso':
+        dof = np.sum(nz_coef)
+            
+    elif method=='ElasticNet':
+        l1_ratio = regr.l1_ratio
+        lam_2 = lam * (1-l1_ratio)
+
+        if np.any(nz_coef):
+            svds = np.linalg.svd(X[:,nz_coef], compute_uv=False)
+        else:
+            svds = np.array([0.])
+        evds = svds[:k]**2
+        dof = np.sum(evds/(evds + k * lam_2))
+
+    return dof
+
+
 def estimate_null_risk(Y):
     '''
     Estimate the null risk of the data for regression problems.

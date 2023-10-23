@@ -17,11 +17,13 @@ def fit_ensemble(regr=None,kwargs_regr={},kwargs_ensemble={}):
     return Ensemble(estimator=regr(**kwargs_regr), **kwargs_ensemble)
 
 
+
 ############################################################################
 #
 # Sample-split and K-fold cross-validation
 #
 ############################################################################
+
 
 def comp_empirical_val(
         X_train, Y_train, X_val, Y_val, regr, kwargs_regr={}, kwargs_ensemble={}, M=20,
@@ -260,8 +262,7 @@ def KFoldCV(
             'shuffle':kf.shuffle,            
         }
     }
-    return res_splitcv, info
-    
+    return res_splitcv, info  
 
 
 
@@ -293,6 +294,8 @@ def comp_empirical_ecv(
         The maximum ensemble size to consider.
     M0 : int, optional
         The number of estimators to use for the ECV estimate.
+    M_max : int, optional
+        The maximum ensemble size to consider for the tuned ensemble.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
     X_test,Y_test : numpy.array, optional
@@ -325,8 +328,6 @@ def comp_empirical_ecv(
     else:
         return regr, risk_ecv
 
-    
-
 
 
 def ECV(
@@ -349,6 +350,8 @@ def ECV(
         Additional keyword arguments for the base estimator.
     kwargs_ensemble : dict, optional
         Additional keyword arguments for the ensemble model.
+    M : int, optional
+        The ensemble size to build.
     M0 : int, optional
         The number of estimators to use for the ECV estimate.
     M_max : int, optional
@@ -433,29 +436,145 @@ def ECV(
     
     
 
+############################################################################
+#
+# Generalized cross-validation
+#
+############################################################################
 
 
+def comp_empirical_gcv(
+        X_train, Y_train, regr, kwargs_regr={}, kwargs_ensemble={}, M=20, 
+        corrected=True, type='full',
+        n_jobs=-1, X_test=None, Y_test=None, _check_input=True, **kwargs_est, 
+        ):
+    '''
+    Compute the empirical GCV or CGCV estimate for a given ensemble model.
 
-
-# def compute_prediction_risk(X, Y, X_test, Y_test, method, param, 
-#                             M, k_list=None, nu=0.5, bootstrap=False, **kwargs):
-#     n, p = X.shape
-#     n_base = int(n**nu)
-
-#     if k_list is not None:
-#         k_list = np.array(k_list)
-#     else:
-#         k_list = np.arange(n_base, n+1, n_base)
-#         if n!=k_list[-1]:
-#             k_list = np.append(k_list, n)
-#     if 0 not in k_list:
-#         k_list = np.insert(k_list,0,0)
+    Parameters
+    ----------
+    X_train,Y_train : numpy.array
+        The training samples.
+    regr : object
+        The base estimator to use for the ensemble model.
+    kwargs_regr : dict, optional
+        Additional keyword arguments for the base estimator.
+    kwargs_ensemble : dict, optional
+        Additional keyword arguments for the ensemble model.
+    M : int, optional
+        The maximum ensemble size to consider.
+    corrected : bool, optional
+        If True, compute the corrected GCV estimate.
+    type : str, optional
+        The type of GCV or GCV estimate to compute. It can be either 'full' or 'union' for naive GCV,
+        and 'full' or 'ovlp' for CGCV.
+    n_jobs : int, optional
+        The number of jobs to run in parallel. If -1, all CPUs are used.
+    X_test,Y_test : numpy.array, optional
+        The test samples.
+    _check_input : bool, optional
+        If True, check the input arguments.        
+    kwargs_est : dict, optional
+        Additional keyword arguments for the risk estimate.
     
-#     res_val = np.full((len(k_list),M), np.inf)
-#     res_test = np.full((len(k_list),M), np.inf)
+    Return:
+    ----------
+    risk_ecv : numpy.array
+        The empirical ECV estimate.
+    '''
+    if _check_input:
+        kwargs_regr, kwargs_ensemble, kwargs_est = check_input(kwargs_regr, kwargs_ensemble, kwargs_est, M)
+    regr = fit_ensemble(regr,kwargs_regr,kwargs_ensemble).fit(X_train, Y_train)
+    if corrected:
+        risk_gcv = regr.compute_cgcv_estimate(X_train, Y_train, type, n_jobs=n_jobs, **kwargs_est)
+    else:
+        risk_gcv = regr.compute_gcv_estimate(X_train, Y_train, type, n_jobs=n_jobs, **kwargs_est)
+    if X_test is not None and Y_test is not None:        
+        risk_val = regr.compute_risk(X_test, Y_test, M, n_jobs=n_jobs, **kwargs_est)
+        return regr, (risk_gcv, risk_val)
+    else:
+        return regr, risk_gcv
     
-#     for j,k in enumerate(k_list):
-#         res_val[j,:], res_test[j,:] = comp_empirical_oobcv(X, Y, X_test, Y_test, 
-#             p/k, method, param, M, M0=1, M_test=M, bootstrap=bootstrap, **kwargs)
 
-#     return k_list, res_val, res_test    
+def GCV(
+        X_train, Y_train, regr, grid_regr={}, grid_ensemble={}, kwargs_regr={}, kwargs_ensemble={},
+        M=20, corrected=True, type='full', return_df=False, n_jobs=-1, X_test=None, Y_test=None, 
+        kwargs_est={}, **kwargs
+        ):
+    '''
+    Cross-validation for ensemble models using the empirical ECV estimate.
+    Currently, only the GCV estimates for the Ridge, Lasso, and ElasticNet are implemented.
+
+    Parameters
+    ----------
+    X_train,Y_train : numpy.array
+        The training samples.
+    grid : pandas.DataFrame
+        The grid of hyperparameters to search over.
+    regr : object
+        The base estimator to use for the ensemble model.
+    kwargs_regr : dict, optional
+        Additional keyword arguments for the base estimator.
+    kwargs_ensemble : dict, optional
+        Additional keyword arguments for the ensemble model.
+    M : int, optional
+        The ensemble size to build.
+    corrected : bool, optional
+        If True, compute the corrected GCV estimate.
+    type : str, optional
+        The type of GCV or GCV estimate to compute. It can be either 'full' or 'union' for naive GCV,
+        and 'full' or 'ovlp' for CGCV.
+    return_df : bool, optional
+        If True, returns the results as a pandas.DataFrame object.
+    n_jobs : int, optional
+        The number of jobs to run in parallel. If -1, all CPUs are used.
+    X_test,Y_val : numpy.array, optional
+        The validation samples. It may be useful to be used for comparing the 
+        performance of ECV with other cross-validation methods that requires sample-splitting.
+    kwargs_est : dict, optional
+        Additional keyword arguments for the risk estimate.
+    '''
+    grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble, kwargs_est = process_grid(
+        grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble, kwargs_est, M)
+
+    test = X_test is not None and Y_test is not None
+    n_res = 2*M if test else M
+    n_grid = len(grid_regr)
+    res_risk = np.full((n_grid,n_res), np.inf)
+
+    for i in range(n_grid):
+        params_ensemble = grid_ensemble[i]
+        params_regr = grid_regr[i]
+        
+        _, res = comp_empirical_gcv(
+            X_train, Y_train, regr, 
+            {**kwargs_regr, **params_regr}, {**kwargs_ensemble, **params_ensemble},
+            M, corrected, type, n_jobs, X_test, Y_test,  _check_input=False, **kwargs_est
+        )
+        res_risk[i, :] = np.r_[res]
+
+    if return_df:
+        cols = np.char.add(['risk_val-']*M, np.char.mod('%d', 1+np.arange(M)))
+        if test:
+            cols = np.append(cols, np.char.add(['risk_test-']*M, np.char.mod('%d', 1+np.arange(M))))
+        res_gcv = pd.concat([pd.DataFrame(grid_regr), pd.DataFrame(grid_ensemble),
+                             pd.DataFrame(res_risk, columns=cols)
+                             ] ,axis=1)
+    else:
+        if test:            
+            res_gcv = (res_risk[:,:M], res_risk[:,M:])
+        else:
+            res_gcv = res_risk
+
+    j, M_best = np.unravel_index(np.nanargmin(res_risk[:,:M]), res_risk[:,:M].shape)
+    M_best += 1
+
+    info = {
+        'best_params_regr': {**kwargs_regr, **grid_regr[j]},
+        'best_params_ensemble': {**kwargs_ensemble, **grid_ensemble[j]},
+        'best_n_estimators': M_best,
+        'best_params_index':j,
+        'best_score':res_risk[j, M_best-1],
+    }
+
+    return res_gcv, info

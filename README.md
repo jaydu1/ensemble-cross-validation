@@ -38,8 +38,8 @@ This project is currently in development. More CV methods will be added shortly.
 - [x] split CV
 - [x] K-fold CV
 - [x] ECV
-- [ ] GCV
-- [ ] CGCV
+- [x] GCV
+- [x] CGCV
 
 
 # Usage
