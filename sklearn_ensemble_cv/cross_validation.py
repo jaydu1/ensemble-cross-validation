@@ -34,9 +34,9 @@ def comp_empirical_val(
 
     Parameters
     ----------
-    X_train,Y_train : numpy.array
+    X_train, Y_train : numpy.array
         The training samples.
-    X_val,Y_val : numpy.array
+    X_val, Y_val : numpy.array
         The validation samples.
     regr : object
         The base estimator to use for the ensemble model.
@@ -48,7 +48,7 @@ def comp_empirical_val(
         The maximum ensemble size to consider.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
-    X_test,Y_test : numpy.array, optional
+    X_test, Y_test : numpy.array, optional
         The test samples.
     _check_input : bool, optional
         If True, check the input arguments.
@@ -82,7 +82,7 @@ def splitCV(
 
     Parameters
     ----------
-    X_train,Y_train : numpy.array
+    X_train, Y_train : numpy.array
         The training samples.
     regr : object
         The base estimator to use for the ensemble model.        
@@ -100,7 +100,7 @@ def splitCV(
         If True, returns the results as a pandas.DataFrame object.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
-    X_test,Y_test : numpy.array, optional
+    X_test, Y_test : numpy.array, optional
         The test samples. It may be useful to be used for comparing the
         performance of different cross-validation methods.
     kwargs_est : dict, optional
@@ -175,7 +175,7 @@ def KFoldCV(
 
     Parameters
     ----------
-    X_train,Y_train : numpy.array
+    X_train, Y_train : numpy.array
         The training samples.
     regr : object
         The base estimator to use for the ensemble model.        
@@ -193,7 +193,7 @@ def KFoldCV(
         If True, returns the results as a pandas.DataFrame object.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
-    X_test,Y_test : numpy.array, optional
+    X_test, Y_test : numpy.array, optional
         The test samples. It may be useful to be used for comparing the
         performance of different cross-validation methods.
     kwargs_est : dict, optional
@@ -282,7 +282,7 @@ def comp_empirical_ecv(
 
     Parameters
     ----------
-    X_train,Y_train : numpy.array
+    X_train, Y_train : numpy.array
         The training samples.
     regr : object
         The base estimator to use for the ensemble model.
@@ -298,7 +298,7 @@ def comp_empirical_ecv(
         The maximum ensemble size to consider for the tuned ensemble.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
-    X_test,Y_test : numpy.array, optional
+    X_test, Y_test : numpy.array, optional
         The test samples.
     _check_input : bool, optional
         If True, check the input arguments.        
@@ -340,7 +340,7 @@ def ECV(
 
     Parameters
     ----------
-    X_train,Y_train : numpy.array
+    X_train, Y_train : numpy.array
         The training samples.
     grid : pandas.DataFrame
         The grid of hyperparameters to search over.
@@ -362,7 +362,7 @@ def ECV(
         If True, returns the results as a pandas.DataFrame object.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
-    X_test,Y_val : numpy.array, optional
+    X_test, Y_test : numpy.array, optional
         The validation samples. It may be useful to be used for comparing the 
         performance of ECV with other cross-validation methods that requires sample-splitting.
     kwargs_est : dict, optional
@@ -453,7 +453,7 @@ def comp_empirical_gcv(
 
     Parameters
     ----------
-    X_train,Y_train : numpy.array
+    X_train, Y_train : numpy.array
         The training samples.
     regr : object
         The base estimator to use for the ensemble model.
@@ -470,7 +470,7 @@ def comp_empirical_gcv(
         and 'full' or 'ovlp' for CGCV.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
-    X_test,Y_test : numpy.array, optional
+    X_test, Y_test : numpy.array, optional
         The test samples.
     _check_input : bool, optional
         If True, check the input arguments.        
@@ -507,7 +507,7 @@ def GCV(
 
     Parameters
     ----------
-    X_train,Y_train : numpy.array
+    X_train, Y_train : numpy.array
         The training samples.
     grid : pandas.DataFrame
         The grid of hyperparameters to search over.
@@ -528,7 +528,7 @@ def GCV(
         If True, returns the results as a pandas.DataFrame object.
     n_jobs : int, optional
         The number of jobs to run in parallel. If -1, all CPUs are used.
-    X_test,Y_val : numpy.array, optional
+    X_test, Y_test : numpy.array, optional
         The validation samples. It may be useful to be used for comparing the 
         performance of ECV with other cross-validation methods that requires sample-splitting.
     kwargs_est : dict, optional
