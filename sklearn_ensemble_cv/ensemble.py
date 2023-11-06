@@ -35,7 +35,8 @@ class Ensemble(BaggingRegressor):
             X : np.ndarray
                 [n, p] The input data to predict target values for.
 
-        Returns:
+        Returns
+        ----------
             Y_hat : np.ndarray
                 [n, M] The predicted target values of all $M$ estimators for the input data.
         '''
@@ -89,7 +90,7 @@ class Ensemble(BaggingRegressor):
         kwargs_est : dict
             Additional keyword arguments for the risk estimate.
 
-        Returns:
+        Returns
         --------
         risk_ecv : np.ndarray or pandas.DataFrame
             [M_test, ] The ECV estimate for each ensemble size in M_test.
@@ -158,7 +159,7 @@ class Ensemble(BaggingRegressor):
         kwargs_est : dict
             Additional keyword arguments for the risk estimate.
 
-        Returns:
+        Returns
         --------
         risk_gcv : np.ndarray or pandas.DataFrame
             [M_test, ] The GCV estimate for each ensemble size in M_test.
@@ -222,7 +223,7 @@ class Ensemble(BaggingRegressor):
         kwargs_est : dict
             Additional keyword arguments for the risk estimate.
 
-        Returns:
+        Returns
         --------
         risk_gcv : np.ndarray or pandas.DataFrame
             [M_test, ] The CGCV estimate for each ensemble size in M_test.

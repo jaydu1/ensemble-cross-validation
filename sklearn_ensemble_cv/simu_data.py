@@ -14,7 +14,7 @@ def create_toeplitz_cov_mat(sigma_sq, first_column_except_1):
     first_column_except_1: array
         1d-array, except diagonal 1.
     
-    Return:
+    Returns
     ----------
         2d-array with dimension (len(first_column)+1, len(first_column)+1)
     '''
@@ -34,7 +34,7 @@ def ar1_cov(rho, n, sigma_sq=1):
     sigma_sq : float
         scalar, multiplicative factor of the covariance matrix.
     
-    Return
+    Returns
     ----------
         2d-matrix of (n,n)
     """
@@ -55,7 +55,7 @@ def block_ar1_cov(rhos, n):
         array, should be within -1 and 1.
     n : int
     
-    Return
+    Returns
     ----------
         2d-matrix of (n,n)
     """

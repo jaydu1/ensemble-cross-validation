@@ -55,7 +55,7 @@ def comp_empirical_val(
     kwargs_est : dict, optional
         Additional keyword arguments for the risk estimate.
     
-    Return:
+    Returns
     ----------
     risk_ecv : numpy.array
         The empirical ECV estimate.
@@ -305,7 +305,7 @@ def comp_empirical_ecv(
     kwargs_est : dict, optional
         Additional keyword arguments for the risk estimate.
     
-    Return:
+    Returns
     ----------
     risk_ecv : numpy.array
         The empirical ECV estimate.
@@ -477,7 +477,7 @@ def comp_empirical_gcv(
     kwargs_est : dict, optional
         Additional keyword arguments for the risk estimate.
     
-    Return:
+    Returns
     ----------
     risk_ecv : numpy.array
         The empirical ECV estimate.
