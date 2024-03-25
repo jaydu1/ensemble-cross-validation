@@ -1,3 +1,7 @@
+
+![PyPI](https://img.shields.io/pypi/v/sklearn_ensemble_cv?label=pypi)
+[![PyPI-Downloads](https://img.shields.io/pepy/dt/sklearn_ensemble_cv)](https://pepy.tech/project/sklearn_ensemble_cv)
+
 # Ensemble-cross-validation
 
 
