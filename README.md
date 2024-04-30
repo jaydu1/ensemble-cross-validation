@@ -26,6 +26,7 @@ grid_regr = {
 grid_ensemble = {
     'max_features':np.array([0.9,1.]),
     'max_samples':np.array([0.6,0.7]),
+    'n_jobs':-1 # use all processors for fitting each ensemble
 }
 
 # Build 50 trees and get estimates until 100 trees
