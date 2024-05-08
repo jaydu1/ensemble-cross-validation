@@ -383,7 +383,7 @@ def ECV(
     n_res = n_M_max+M if test else n_M_max
     n_grid = len(grid_regr)
     res_risk = np.full((n_grid,n_res), np.inf)
-    
+
     for i in range(n_grid):
         params_ensemble = grid_ensemble[i]
         params_regr = grid_regr[i]
