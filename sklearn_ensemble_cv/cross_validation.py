@@ -382,7 +382,7 @@ def ECV(
     test = X_test is not None and Y_test is not None
     n_res = n_M_max+M if test else n_M_max
     n_grid = len(grid_regr)
-    res_risk = np.full((n_grid,n_res), np.inf)
+    res_risk = np.full((n_grid, n_res), np.inf)
 
     for i in range(n_grid):
         params_ensemble = grid_ensemble[i]
@@ -397,6 +397,8 @@ def ECV(
 
     if return_df:
         cols = np.char.add(['risk_val-']*n_M_max, np.char.mod('%d', 1+np.arange(n_M_max)))
+        if np.isinf(M_max[-1]):
+            cols[-1] = 'risk_val-inf'
         if test:
             cols = np.append(cols, np.char.add(['risk_test-']*M, np.char.mod('%d', 1+np.arange(M))))
         res_ecv = pd.concat([pd.DataFrame(grid_regr), pd.DataFrame(grid_ensemble),
@@ -444,7 +446,7 @@ def ECV(
 
 
 def comp_empirical_gcv(
-        X_train, Y_train, regr, kwargs_regr={}, kwargs_ensemble={}, M=20, 
+        X_train, Y_train, regr, kwargs_regr={}, kwargs_ensemble={}, M=20, M0=20, M_max=np.inf, 
         corrected=True, type='full',
         n_jobs=-1, X_test=None, Y_test=None, _check_input=True, **kwargs_est, 
         ):
@@ -483,12 +485,23 @@ def comp_empirical_gcv(
         The empirical ECV estimate.
     '''
     if _check_input:
+        if M0>M:
+            raise ValueError('M0 must be less than or equal to M.')
+        if np.isinf(M_max):
+            M_max = np.append(np.arange(M)+1, np.inf)
+        elif np.isscalar(M_max):
+            M_max = np.arange(M_max)+1
+    
         kwargs_regr, kwargs_ensemble, kwargs_est = check_input(kwargs_regr, kwargs_ensemble, kwargs_est, M)
+
     regr = fit_ensemble(regr,kwargs_regr,kwargs_ensemble).fit(X_train, Y_train)
     if corrected:
-        risk_gcv = regr.compute_cgcv_estimate(X_train, Y_train, type, n_jobs=n_jobs, **kwargs_est)
+        risk_gcv = regr.compute_cgcv_estimate(X_train, Y_train, M0, type, n_jobs=n_jobs, **kwargs_est)
     else:
-        risk_gcv = regr.compute_gcv_estimate(X_train, Y_train, type, n_jobs=n_jobs, **kwargs_est)
+        risk_gcv = regr.compute_gcv_estimate(X_train, Y_train, M0, type, n_jobs=n_jobs, **kwargs_est)
+
+    risk_gcv = regr.extrapolate(risk_gcv, M_max)
+    
     if X_test is not None and Y_test is not None:        
         risk_val = regr.compute_risk(X_test, Y_test, M, n_jobs=n_jobs, **kwargs_est)
         return regr, (risk_gcv, risk_val)
@@ -498,7 +511,7 @@ def comp_empirical_gcv(
 
 def GCV(
         X_train, Y_train, regr, grid_regr={}, grid_ensemble={}, kwargs_regr={}, kwargs_ensemble={},
-        M=20, corrected=True, type='full', return_df=False, n_jobs=-1, X_test=None, Y_test=None, 
+        M=20, M0=20, M_max=np.inf, corrected=True, type='full', return_df=False, n_jobs=-1, X_test=None, Y_test=None, 
         kwargs_est={}, **kwargs
         ):
     '''
@@ -537,10 +550,18 @@ def GCV(
     grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble, kwargs_est = process_grid(
         grid_regr, kwargs_regr, grid_ensemble, kwargs_ensemble, kwargs_est, M)
 
+    if M0>M:
+        raise ValueError('M0 must be less than or equal to M.')
+    if np.isinf(M_max):
+        M_max = np.append(np.arange(M)+1, np.inf)
+    elif np.isscalar(M_max):
+        M_max = np.arange(M_max)+1
+    n_M_max = len(M_max)
+
     test = X_test is not None and Y_test is not None
-    n_res = 2*M if test else M
+    n_res = n_M_max+M if test else n_M_max
     n_grid = len(grid_regr)
-    res_risk = np.full((n_grid,n_res), np.inf)
+    res_risk = np.full((n_grid, n_res), np.inf)
 
     for i in range(n_grid):
         params_ensemble = grid_ensemble[i]
@@ -549,14 +570,16 @@ def GCV(
         _, res = comp_empirical_gcv(
             X_train, Y_train, regr, 
             {**kwargs_regr, **params_regr}, {**kwargs_ensemble, **params_ensemble},
-            M, corrected, type, n_jobs, X_test, Y_test,  _check_input=False, **kwargs_est
+            M, M0, M_max, corrected, type, n_jobs, X_test, Y_test,  _check_input=False, **kwargs_est
         )
         res_risk[i, :] = np.r_[res]
 
     if return_df:
-        cols = np.char.add(['risk_val-']*M, np.char.mod('%d', 1+np.arange(M)))
+        cols = np.char.add(['risk_val-']*n_M_max, np.char.mod('%d', 1+np.arange(n_M_max)))
+        if np.isinf(M_max[-1]):
+            cols[-1] = 'risk_val-inf'
         if test:
-            cols = np.append(cols, np.char.add(['risk_test-']*M, np.char.mod('%d', 1+np.arange(M))))
+            cols = np.append(cols, np.char.add(['risk_test-']*M, np.char.mod('%d', 1+np.arange(M))))        
         res_gcv = pd.concat([pd.DataFrame(grid_regr), pd.DataFrame(grid_ensemble),
                              pd.DataFrame(res_risk, columns=cols)
                              ] ,axis=1)
@@ -578,3 +601,7 @@ def GCV(
     }
 
     return res_gcv, info
+
+
+
+

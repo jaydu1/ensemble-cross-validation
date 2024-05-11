@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 import pandas as pd
-from itertools import product
+from itertools import product, combinations
 
 
 def reset_random_seeds(seed):
@@ -120,6 +120,59 @@ def estimate_null_risk(Y):
 
 
 
+def _avg_sq_err_M(x, M, M_max):
+    '''
+    Compute the average of all combinations of M of all columns.
+
+    Parameters
+    ----------
+    x : 2d-array
+        The data of shape [n,M].
+    M : int
+        The number of columns to combine.
+    M_max : int
+        The maximum combinations number of columns to combine.
+
+    Returns
+    -------
+    avg_sq_err : float
+        The average squared error of the M-ensemble.
+    '''
+    if M==1:
+        return np.mean(x**2, axis=1)
+    else:
+        iter = 0
+        err = []
+        for id in combinations(np.arange(x.shape[1]), M):
+            if iter >= M_max:
+                break
+            err.append(np.mean(x[:,id], axis=1))
+            iter += 1
+        err = np.c_[err]**2
+        return np.mean(err, axis=0)
+
+
+def avg_sq_err(err, M_max=None):
+    '''
+    Compute the average squared error.
+
+    Parameters
+    ----------
+    err : 2d-array
+        The squared errors of shape [n,M].
+
+    Returns
+    -------
+    risk : 1d-array
+        The estimated squared errors of the M-ensembles.
+    '''
+    if M_max is None:
+        M_max = np.ones(err.shape[1]) * 500
+        M_max[np.arange(err.shape[1])>10] = 10
+        M_max = M_max.astype(int)
+    risk = np.fromiter((_avg_sq_err_M(err, M+1, M_max[M]) for M in np.arange(err.shape[1])), 
+                       dtype=np.dtype((float, err.shape[0]))).T
+    return risk
 
 ####################################################################################################
 #

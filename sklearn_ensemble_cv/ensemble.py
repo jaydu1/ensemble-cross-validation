@@ -1,6 +1,6 @@
 from typing import List
 from sklearn.ensemble import BaggingRegressor
-from sklearn_ensemble_cv.utils import risk_estimate, degree_of_freedom
+from sklearn_ensemble_cv.utils import risk_estimate, degree_of_freedom, avg_sq_err
 
 from joblib import Parallel, delayed
 n_jobs = 16
@@ -140,8 +140,26 @@ class Ensemble(BaggingRegressor):
         else:
             return risk_ecv
         
+    
+    def extrapolate(self, risk, M_test=None):
+        if M_test is None:
+            M_test = self.n_estimators
+        M0 = risk.shape[0]        
+        if np.isscalar(M_test):
+            M_test = np.arange(1,M_test+1)
+        else:
+            M_test = np.array(M_test)
+        if M0 <2 or np.max(M_test) < M0:
+            raise ValueError('The ensemble size M or M0 must be at least 2.')
+        
+        risk_1 = risk[0]
+        risk_inf = np.sum(risk - risk_1/np.arange(1, M0+1)) / np.sum(1 - 1/np.arange(1, M0+1))
+        
+        risk_ecv = (1/M_test) * risk_1 + (1-1/M_test) * risk_inf
+        return risk_ecv
+        
 
-    def compute_gcv_estimate(self, X_train, Y_train, type='full', return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
+    def compute_gcv_estimate(self, X_train, Y_train, M=None, type='full', return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
         '''
         Computes the GCV estimate for the given input data using the provided BaggingRegressor model.
 
@@ -170,13 +188,12 @@ class Ensemble(BaggingRegressor):
             raise ValueError('GCV is only implemented for Ridge, Lasso, and ElasticNet regression.')
         if Y_train.ndim==1:
             Y_train = Y_train[:,None]
-        M = self.n_estimators
+        if M is None:
+            M = self.n_estimators        
         M_arr = np.arange(M)
         ids_list = self.estimators_samples_
-        Y_hat = self.predict_individual(X_train, M, n_jobs)
-        Y_hat = np.cumsum(Y_hat, axis=1) / (M_arr+1)
+        Y_hat = self.predict_individual(X_train, M, n_jobs)        
         n = X_train.shape[0]
-        err_eval = (Y_hat - Y_train)**2
 
         with Parallel(n_jobs=n_jobs, max_nbytes=None, verbose=verbose) as parallel:
             dof = parallel(
@@ -187,10 +204,13 @@ class Ensemble(BaggingRegressor):
             dof = np.mean(dof)
 
         if type=='full':
+            err_eval = avg_sq_err(Y_hat - Y_train)
             err_train = np.mean(err_eval, axis=0)
             deno = (1 - dof/n)**2
             risk_gcv = err_train / deno
-        else:            
+        else:
+            Y_hat = np.cumsum(Y_hat, axis=1) / (M_arr+1)
+            err_eval = (Y_hat - Y_train)**2
             ids_union_list = [reduce(np.union1d, ids_list[:j+1]) for j in M_arr]
             n_ids = np.array([len(ids) for ids in ids_union_list])
             err_train = np.array([np.mean(err_eval[ids_union_list[j],j]) for j in M_arr])
@@ -205,7 +225,7 @@ class Ensemble(BaggingRegressor):
         
     
 
-    def compute_cgcv_estimate(self, X_train, Y_train, type='full', return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
+    def compute_cgcv_estimate(self, X_train, Y_train, M=None, type='full', return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
         '''
         Computes the GCV estimate for the given input data using the provided BaggingRegressor model.
 
@@ -234,7 +254,8 @@ class Ensemble(BaggingRegressor):
             raise ValueError('GCV is only implemented for Ridge, Lasso, and ElasticNet regression.')
         if Y_train.ndim==1:
             Y_train = Y_train[:,None]
-        M = self.n_estimators
+        if M is None:
+            M = self.n_estimators            
         M_arr = np.arange(M)
         ids_list = self.estimators_samples_
         Y_hat = self.predict_individual(X_train, M, n_jobs)
@@ -260,9 +281,8 @@ class Ensemble(BaggingRegressor):
         else:
             correct_term = np.mean([np.mean(err_train[ids_list[j],j]) for j in M_arr]) / (1 - dof/n)**2
 
-        Y_hat = np.cumsum(Y_hat, axis=1) / (M_arr+1)
-        err_eval = (Y_hat - Y_train)**2
-        err_train = np.array([np.mean(err_eval[:,j]) for j in M_arr])
+        err_eval = avg_sq_err(Y_hat - Y_train)
+        err_train = np.mean(err_eval, axis=0)
         deno = (1 - dof/n)**2
         C = 1/ (n/dof - 1)**2 / (M_arr+1) * (psi/phi - 1) * correct_term
         risk_cgcv = err_train / deno - C
