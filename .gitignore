@@ -1,6 +1,9 @@
 docs
 pdoc
 update.bash
+update.py
+test.py
+risk_theory.py
 
 
 # Byte-compiled / optimized / DLL files
