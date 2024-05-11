@@ -51,7 +51,9 @@ class Ensemble(BaggingRegressor):
         return Y_hat
     
 
-    def compute_risk(self, X, Y, M_test=None, return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
+    def compute_risk(
+            self, X, Y, M_test=None, return_df=False, 
+            avg=True, n_jobs=-1, verbose=0, **kwargs_est):
         if M_test is None:
             M_test = self.n_estimators
         if M_test>self.n_estimators:
@@ -60,8 +62,11 @@ class Ensemble(BaggingRegressor):
             Y = Y[:,None]
 
         Y_hat = self.predict_individual(X, M_test, n_jobs, verbose)
-        Y_hat = np.cumsum(Y_hat, axis=1) / np.arange(1, M_test+1)
-        err_eval = (Y_hat - Y)**2
+        if avg:
+            err_eval = avg_sq_err(Y_hat - Y)
+        else:
+            Y_hat = np.cumsum(Y_hat, axis=1) / np.arange(1, M_test+1)
+            err_eval = (Y_hat - Y)**2
         risk = risk_estimate(err_eval, axis=0, **kwargs_est)
 
         if return_df:
@@ -156,6 +161,7 @@ class Ensemble(BaggingRegressor):
         risk_inf = np.sum(risk - risk_1/np.arange(1, M0+1)) / np.sum(1 - 1/np.arange(1, M0+1))
         
         risk_ecv = (1/M_test) * risk_1 + (1-1/M_test) * risk_inf
+        risk_ecv[:M0] = risk
         return risk_ecv
         
 
@@ -269,18 +275,19 @@ class Ensemble(BaggingRegressor):
 
         with Parallel(n_jobs=n_jobs, max_nbytes=None, verbose=verbose) as parallel:
             dof = parallel(
-                delayed(lambda j:degree_of_freedom(self.estimators_[j], X_train[ids_list[j]])
-                       )(j)
+                delayed(lambda j:degree_of_freedom(self.estimators_[j], X_train[ids_list[j]]))(j)
                 for j in M_arr
             )
             dof = np.mean(dof)
 
         err_train = (Y_hat-Y_train)**2
         if type=='full':
-            correct_term = np.mean(err_train) / (1 - 2* dof/n + dof**2/(k*n))
+            correct_term = np.mean(err_train) / (1 - 2*dof/n + dof**2/(k*n))
+        elif type=='ovlp':
+            correct_term = np.mean([np.mean(err_train[ids_list[j],j]) for j in M_arr]) / (1 - dof/k)**2
         else:
-            correct_term = np.mean([np.mean(err_train[ids_list[j],j]) for j in M_arr]) / (1 - dof/n)**2
-
+            raise ValueError('The type must be either "full" or "ovlp".')
+        
         err_eval = avg_sq_err(Y_hat - Y_train)
         err_train = np.mean(err_eval, axis=0)
         deno = (1 - dof/n)**2

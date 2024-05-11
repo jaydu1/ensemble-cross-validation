@@ -45,7 +45,7 @@ def risk_estimate(sq_err, axis=None, method='AVG', **kwargs):
 
     Parameters
     ----------
-    sq_err : 1d-array
+    sq_err : 2d-array
         The squared error.
     method : str
         The method to use for risk estimation. Either 'AVG' or 'MOM'.
@@ -120,7 +120,7 @@ def estimate_null_risk(Y):
 
 
 
-def _avg_sq_err_M(x, M, M_max):
+def _avg_sq_err_M(x, M, M_max, axis=0, **kwargs_est):
     '''
     Compute the average of all combinations of M of all columns.
 
