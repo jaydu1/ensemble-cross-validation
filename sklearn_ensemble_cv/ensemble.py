@@ -23,6 +23,11 @@ class Ensemble(BaggingRegressor):
     def __init__(self, **kwargs):
         super(BaggingRegressor, self).__init__(**kwargs)
 
+    # def get_coef(self, M=-1):
+    #     if M < 0:
+    #         M = self.n_estimators
+    #     coef_ = np.mean(np.array([self.estimators_[i].coef_ for i in range(M)]), axis=0)
+    #     return coef_
 
     def predict_individual(self: BaggingRegressor, X: np.ndarray, M: int=-1, n_jobs: int=-1, verbose: bool=0) -> np.ndarray:
         '''
@@ -167,7 +172,7 @@ class Ensemble(BaggingRegressor):
 
     def compute_gcv_estimate(self, X_train, Y_train, M=None, type='full', return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
         '''
-        Computes the GCV estimate for the given input data using the provided BaggingRegressor model.
+        Computes the naive GCV estimate for the given input data using the provided BaggingRegressor model.
 
         Parameters
         ----------
@@ -190,7 +195,7 @@ class Ensemble(BaggingRegressor):
         risk_gcv : np.ndarray or pandas.DataFrame
             [M_test, ] The GCV estimate for each ensemble size in M_test.
         '''
-        if self.base_estimator_.__class__.__name__ not in ['Ridge', 'Lasso', 'ElasticNet']:
+        if self.estimator_.__class__.__name__ not in ['Ridge', 'Lasso', 'ElasticNet']:
             raise ValueError('GCV is only implemented for Ridge, Lasso, and ElasticNet regression.')
         if Y_train.ndim==1:
             Y_train = Y_train[:,None]
@@ -233,7 +238,7 @@ class Ensemble(BaggingRegressor):
 
     def compute_cgcv_estimate(self, X_train, Y_train, M=None, type='full', return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
         '''
-        Computes the GCV estimate for the given input data using the provided BaggingRegressor model.
+        Computes the corrected GCV estimate for the given input data using the provided BaggingRegressor model.
 
         Parameters
         ----------
@@ -256,7 +261,7 @@ class Ensemble(BaggingRegressor):
         risk_gcv : np.ndarray or pandas.DataFrame
             [M_test, ] The CGCV estimate for each ensemble size in M_test.
         '''
-        if self.base_estimator_.__class__.__name__ not in ['Ridge', 'Lasso', 'ElasticNet']:
+        if self.estimator_.__class__.__name__ not in ['Ridge', 'Lasso', 'ElasticNet']:
             raise ValueError('GCV is only implemented for Ridge, Lasso, and ElasticNet regression.')
         if Y_train.ndim==1:
             Y_train = Y_train[:,None]
@@ -264,13 +269,13 @@ class Ensemble(BaggingRegressor):
             M = self.n_estimators            
         M_arr = np.arange(M)
         ids_list = self.estimators_samples_
-        Y_hat = self.predict_individual(X_train, M, n_jobs)
-          
+        Y_hat = self.predict_individual(X_train, M, n_jobs)        
+
         n, p = X_train.shape
-        if self.estimators_[0].fit_intercept:
+        if hasattr(self.estimators_[0], 'fit_intercept') and self.estimators_[0].fit_intercept:
             p += 1
         phi = p/n
-        k = int(n * self.max_samples)
+        k = self.max_samples if isinstance(self.max_samples, int) else int(n * self.max_samples)
         psi = p/k
 
         with Parallel(n_jobs=n_jobs, max_nbytes=None, verbose=verbose) as parallel:
@@ -299,4 +304,3 @@ class Ensemble(BaggingRegressor):
             return df
         else:
             return risk_cgcv
-    
