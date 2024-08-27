@@ -9,7 +9,7 @@ from sklearn_ensemble_cv.simu_data import generate_data
 
 
 __license__ = "MIT"
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __author__ = "Jin-Hong Du"
 __email__ = "jinhongd@andrew.cmu.edu"
 __maintainer__ = "Jin-Hong Du"

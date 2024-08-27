@@ -262,14 +262,16 @@ class Ensemble(BaggingRegressor):
             [M_test, ] The CGCV estimate for each ensemble size in M_test.
         '''
         if self.estimator_.__class__.__name__ not in ['Ridge', 'Lasso', 'ElasticNet']:
-            raise ValueError('GCV is only implemented for Ridge, Lasso, and ElasticNet regression.')
+            # raise ValueError('GCV is only implemented for Ridge, Lasso, and ElasticNet regression.')
+            return self._compute_cgcv_estimate_general(X_train, Y_train, M, type, return_df, n_jobs, verbose, **kwargs_est)
+            
         if Y_train.ndim==1:
             Y_train = Y_train[:,None]
         if M is None:
             M = self.n_estimators            
         M_arr = np.arange(M)
         ids_list = self.estimators_samples_
-        Y_hat = self.predict_individual(X_train, M, n_jobs)        
+        Y_hat = self.predict_individual(X_train, M, n_jobs)
 
         n, p = X_train.shape
         if hasattr(self.estimators_[0], 'fit_intercept') and self.estimators_[0].fit_intercept:
@@ -304,3 +306,104 @@ class Ensemble(BaggingRegressor):
             return df
         else:
             return risk_cgcv
+
+
+
+    def _compute_cgcv_estimate_general(
+            self, X_train, Y_train, M=None, type='full',
+            return_df=False, n_jobs=-1, verbose=0, **kwargs_est):
+        '''
+        Computes the corrected GCV estimate for the given input data using the provided BaggingRegressor model.
+
+        Parameters
+        ----------
+        X_train : np.ndarray
+            [n, p] The input covariates.
+        Y_train : np.ndarray
+            [n, ] The target values of the input data.
+        type : str, optional
+            The type of CGCV estimate to compute. Can be either 'full' (using full observations) or 
+            'ovlp' (using overlapping observations).
+        return_df : bool, optional
+            If True, returns the GCV estimate as a pandas.DataFrame object.
+        n_jobs : int, optional
+            The number of jobs to run in parallel. If -1, all CPUs are used.
+        kwargs_est : dict
+            Additional keyword arguments for the risk estimate.
+
+        Returns
+        --------
+        risk_gcv : np.ndarray or pandas.DataFrame
+            [M_test, ] The CGCV estimate for each ensemble size in M_test.
+        '''
+        if not hasattr(self.estimator_.__class__, 'get_gcv_input'):
+            raise ValueError(
+                "Explicit GCV calculation is only implemented for Ridge, Lasso, and ElasticNet regression.\n"
+                "For estimator class '{estimator_class.__name__}', it needs to have 'get_gcv_input' "
+                "method to compute the GCV input. The function takes training samples (X,y) in [n,p] by [n,1] "
+                "as input and return a tuple of:\n"
+                "(1) [n, ] residuals;\n"
+                "(2) [n, ] derivative of loss evaluated at residuals;\n"
+                "(3) [1, ] degrees of freedom;\n"
+                "(4) [1, ] the trace of generalized smoothing matrix tr_V.")
+
+        if Y_train.ndim==1:
+            Y_train = Y_train[:,None]
+        if M is None:
+            M = self.n_estimators            
+        M_arr = np.arange(M)
+        ids_list = [np.sort(ids) for ids in self.estimators_samples_]
+        Y_hat = self.predict_individual(X_train, M, n_jobs)
+
+        n, p = X_train.shape
+        if hasattr(self.estimators_[0], 'fit_intercept') and self.estimators_[0].fit_intercept:
+            p += 1
+        with Parallel(n_jobs=n_jobs, max_nbytes=None, verbose=verbose) as parallel:
+            res = parallel(
+                delayed(
+                    lambda j:self.estimators_[j].get_gcv_input(X_train[ids_list[j]], Y_train[ids_list[j]])
+                        )(j) for j in M_arr
+            )
+            r, loss_p, dof, tr_V = list(zip(*res))
+            r = np.array(r).T
+            loss_p = np.array(loss_p).T
+            dof = np.array(dof)
+            tr_V = np.array(tr_V)
+        
+        tmp = r + (dof / tr_V) [None,:] * loss_p
+        
+        if type=='full':
+            r_full = Y_train - Y_hat            
+            tmp_full = np.zeros_like(r_full)
+            for j in range(tmp.shape[1]):
+                tmp_full[ids_list[j],j] = tmp[:,j]
+
+            del r, tmp
+
+            def _get_est(i,j):
+                return np.mean(np.where(np.isin(np.arange(n), ids_list[i]), tmp_full[:,i], r_full[:,i]) * np.where(np.isin(np.arange(n), ids_list[j]), tmp_full[:,j], r_full[:,j]))
+        elif type=='ovlp':        
+            def _get_est(i,j):
+                ids = np.intersect1d(ids_list[i], ids_list[j])
+                if len(ids)>0:
+                    return np.mean(tmp[np.isin(ids_list[i],ids),i] * tmp[np.isin(ids_list[j],ids),j])
+                else:
+                    return np.nan                        
+        else:
+            raise ValueError('The type must be either "full" or "ovlp".')
+
+        risk_M1 = np.mean(Parallel(n_jobs=n_jobs-2, verbose=verbose)(delayed(_get_est)(i=i, j=i) for i in M_arr))
+        if M>1:
+            risk_Minf = np.nanmean(Parallel(n_jobs=n_jobs-2, verbose=verbose)(delayed(_get_est)(i=i, j=j) for j in M_arr for i in M_arr if j<i))
+            risk_cgcv = (1/(1+M_arr)) * risk_M1 + (1-1/(1+M_arr)) * risk_Minf
+        else:
+            risk_cgcv = np.append([risk_M1], np.ones(M-1)*np.nan)
+
+        if return_df:
+            err_eval = avg_sq_err(Y_train - Y_hat)
+            err_train = np.mean(err_eval, axis=0)
+            df = pd.DataFrame({'M':M_arr+1, 'estimate':risk_cgcv, 'err_train':err_train})
+            return df
+        else:
+            return risk_cgcv            
+    
