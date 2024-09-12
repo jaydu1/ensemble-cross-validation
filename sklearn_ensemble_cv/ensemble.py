@@ -49,10 +49,10 @@ class Ensemble(BaggingRegressor):
             M = self.n_estimators
         with Parallel(n_jobs=n_jobs, max_nbytes=None, verbose=verbose) as parallel:
             Y_hat = parallel(
-                delayed(lambda reg,X: reg.predict(X[:,features]).reshape(-1,1))(reg, X)
+                delayed(lambda reg,X: reg.predict(X[:,features]))(reg, X)
                 for reg,features in zip(self.estimators_[:M],self.estimators_features_[:M])
             )
-        Y_hat = np.concatenate(Y_hat, axis=-1)
+        Y_hat = np.stack(Y_hat, axis=-1)
         return Y_hat
     
 
@@ -62,11 +62,13 @@ class Ensemble(BaggingRegressor):
         if M_test is None:
             M_test = self.n_estimators
         if M_test>self.n_estimators:
-            raise ValueError('The ensemble size M must be less than or equal to the number of estimators in the BaggingRegressor model.')
-        if Y.ndim==1:
-            Y = Y[:,None]
+            raise ValueError('The ensemble size M must be less than or equal to the number of estimators in the BaggingRegressor model.')        
 
         Y_hat = self.predict_individual(X, M_test, n_jobs, verbose)
+        if Y_hat.ndim>2:
+            Y_hat = Y_hat.reshape((-1,Y_hat.shape[-1]))
+        Y = Y.reshape((*Y_hat.shape[:-1],1))
+
         if avg:
             err_eval = avg_sq_err(Y_hat - Y)
         else:
@@ -90,7 +92,7 @@ class Ensemble(BaggingRegressor):
         X_train : np.ndarray
             [n, p] The input covariates.
         Y_train : np.ndarray
-            [n, ] The target values of the input data.
+            [n, ...] The target values of the input data.
         M_test : int or np.ndarray
             The maximum ensemble size of the ECV estimate.
         M0 : int, optional
@@ -117,25 +119,24 @@ class Ensemble(BaggingRegressor):
             M_test = np.arange(1,M_test+1)
         else:
             M_test = np.array(M_test)
-        if Y_train.ndim==1:
-            Y_train = Y_train[:,None]
         ids_list = self.estimators_samples_[:M0]
         Y_hat = self.predict_individual(X_train, M0, n_jobs)
+        Y_train = Y_train.reshape((*Y_hat.shape[:-1],1))
         dev_eval = Y_hat - Y_train
         err_eval = dev_eval**2
         
         with Parallel(n_jobs=n_jobs, max_nbytes=None, verbose=verbose) as parallel:
             res_1 = parallel(
                 delayed(lambda j:risk_estimate(
-                    np.delete(err_eval[:,j], ids_list[j]), **kwargs_est)
+                    np.delete(err_eval[...,j], ids_list[j], axis=0).reshape(-1,1), **kwargs_est)
                        )(j)
                 for j in np.arange(M0)
             )
             res_2 = parallel(
                 delayed(lambda i,j:risk_estimate(
-                    np.mean(
-                        np.delete(dev_eval[:,[i,j]], 
-                                  np.union1d(ids_list[i], ids_list[j]), axis=0), axis=1)**2,
+                    (np.mean(
+                        np.delete(dev_eval[...,[i,j]], 
+                                  np.union1d(ids_list[i], ids_list[j]), axis=0), axis=-1)**2).reshape(-1,1),
                     **kwargs_est
                 ))(i,j)
                 for i,j in itertools.combinations(np.arange(M0), 2)
@@ -199,6 +200,8 @@ class Ensemble(BaggingRegressor):
             raise ValueError('GCV is only implemented for Ridge, Lasso, and ElasticNet regression.')
         if Y_train.ndim==1:
             Y_train = Y_train[:,None]
+        elif Y_train.ndim>2:
+            raise NotImplementedError('CGCV for multi-task regression not implemented yet.')
         if M is None:
             M = self.n_estimators        
         M_arr = np.arange(M)
@@ -349,6 +352,8 @@ class Ensemble(BaggingRegressor):
 
         if Y_train.ndim==1:
             Y_train = Y_train[:,None]
+        elif Y_train.ndim>2:
+            raise NotImplementedError('CGCV for multi-task regression not implemented yet.')
         if M is None:
             M = self.n_estimators            
         M_arr = np.arange(M)
