@@ -61,8 +61,9 @@ Check out Jupyter Notebooks in the [tutorials](https://github.com/jaydu1/ensembl
 
 Name | Description
 ---|---
-[basics.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/basics.ipynb) | Basics about how to apply ECV/CGCV on risk estimation and hyperparameter tuning for ensemble learning. 
-[cgcv_l1_huber.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/cgcv_l1_huber.ipynb) | Custom CGCV for M-estimator: l1-regularized Huber ensembles. 
+[basics.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/basics.ipynb) | Basics about how to apply ECV/CGCV on risk estimation and hyperparameter tuning for ensemble learning.
+[cgcv_l1_huber.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/cgcv_l1_huber.ipynb) | Custom CGCV for M-estimator: l1-regularized Huber ensembles.
+[multitask.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/multitask.ipynb) | Apply ECV on risk estimation and hyperparameter tuning for multi-task ensemble learning.
 
 The code is tested with `scikit-learn == 1.3.1`.
 
