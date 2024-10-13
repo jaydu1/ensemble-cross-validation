@@ -4,8 +4,6 @@ from sklearn.model_selection import ShuffleSplit, KFold
 from sklearn_ensemble_cv.ensemble import Ensemble
 from sklearn_ensemble_cv.utils import check_input, process_grid
 from sklearn.tree import DecisionTreeRegressor
-from joblib import Parallel, delayed
-n_jobs = 16
 
 import warnings
 warnings.filterwarnings('ignore') 
