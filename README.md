@@ -74,3 +74,16 @@ The module can be installed via PyPI:
 ```cmd
 pip install sklearn-ensemble-cv
 ```
+
+
+
+## Citation
+
+If you find this package useful for your research, please consider citing our research paper: 
+
+Method|Reference
+---|---
+ECV|Du, J. H., Patil, P., Roeder, K., & Kuchibhotla, A. K. (2024). Extrapolated cross-validation for randomized ensembles. Journal of Computational and Graphical Statistics, 1-12.
+GCV|Du, J. H., Patil, P., & Kuchibhotla, A. K. (2023). Subsample ridge ensembles: equivalences and generalized cross-validation. In Proceedings of the 40th International Conference on Machine Learning (pp. 8585-8631).<br>Patil, P., & Du, J. H. (2024). Generalized equivalences between subsampling and ridge regularization. Advances in Neural Information Processing Systems, 36.
+CGCV | Bellec, P. C., Du, J. H., Koriyama, T., Patil, P., & Tan, K. (2024). Corrected generalized cross-validation for finite ensembles of penalized estimators. Journal of the Royal Statistical Society Series B: Statistical Methodology, qkae092.
+CGCV (non-square loss)|Koriyama, T., Patil, P., Du, J. H., Tan, K., & Bellec, P. C. (2024). Precise asymptotics of bagging regularized M-estimators. arXiv preprint arXiv:2409.15252.
