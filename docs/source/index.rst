@@ -21,8 +21,8 @@ Ensemble Cross-validation is a Python package for performing specialized cross-v
    :glob:
    :caption: Main functions
 
-   main_function/gcate
-   main_function/lfc
+   main_function/ensemble
+   main_function/cv
 
 
 .. toctree::
