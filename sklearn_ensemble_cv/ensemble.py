@@ -59,6 +59,25 @@ class Ensemble(BaggingRegressor):
     def compute_risk(
             self, X, Y, M_test=None, return_df=False, 
             avg=True, n_jobs=-1, verbose=0, **kwargs_est):
+        '''
+        Computes the risk estimate for the given input data using the provided BaggingRegressor model.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            [n, p] The input covariates.
+        Y : np.ndarray
+            [n, ...] The target values of the input data.
+        M_test : int, optional
+            The ensemble size of the risk estimate.
+        return_df : bool, optional
+            If True, returns the risk estimate as a pandas.DataFrame object.
+
+        Returns
+        --------
+        risk : np.ndarray or pandas.DataFrame
+            [M_test, ] The risk estimate for each ensemble size in M_test.
+        '''
         if M_test is None:
             M_test = self.n_estimators
         if M_test>self.n_estimators:
@@ -153,6 +172,21 @@ class Ensemble(BaggingRegressor):
         
     
     def extrapolate(self, risk, M_test=None):
+        '''
+        Extrapolates the risk estimate for the given ensemble size using the provided BaggingRegressor model.
+
+        Parameters
+        ----------
+        risk : np.ndarray
+            [M0, ] The risk estimate for the ensemble sizes in M0.
+        M_test : int or np.ndarray
+            The ensemble size to extrapolate the risk estimate to.
+        
+        Returns
+        --------
+        risk_ecv : np.ndarray
+            [M_test, ] The extrapolated risk estimate for each ensemble size in M_test.
+        '''
         if M_test is None:
             M_test = self.n_estimators
         M0 = risk.shape[0]        
