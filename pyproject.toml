@@ -30,10 +30,7 @@ authors = [
 maintainers = [
   {name = "Jin-Hong Du", email = "jinhongd@andrew.cmu.com"}
 ]
-description = "Ensemble Cross-validation is a Python package for performing specialized " 
-    "cross-validation on ensemble models, such as extrapolated cross-validation (ECV), "
-    "generalized cross-validation (GCV), and etc. The implementation of ensemble models are "
-    "based on scikit-learn."
+description = "Ensemble Cross-validation is a Python package for performing specialized cross-validation on ensemble models, such as extrapolated cross-validation (ECV), generalized cross-validation (GCV), and etc. The implementation of ensemble models are based on scikit-learn."
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {text = "MIT License"}
 
