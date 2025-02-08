@@ -2,7 +2,7 @@
 [![PyPI](https://img.shields.io/pypi/v/sklearn_ensemble_cv?label=pypi)](https://pypi.org/project/sklearn-ensemble-cv)
 [![PyPI-Downloads](https://img.shields.io/pepy/dt/sklearn_ensemble_cv)](https://pepy.tech/project/sklearn_ensemble_cv)
 
-# Ensemble-cross-validation
+# Ensemble Cross Validation
 
 
 `sklearn_ensemble_cv` is a Python module for performing accurate and efficient ensemble cross-validation methods from various [projects](https://jaydu1.github.io/overparameterized-ensembling/).
