@@ -1,4 +1,4 @@
 Doubly-robust semiparametric inference
 ======================================
-.. automodule:: causarray.DR_learner
+.. automodule:: sklearn_ensemble_cv.cross_validation
    :members:

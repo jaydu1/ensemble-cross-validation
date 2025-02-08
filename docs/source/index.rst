@@ -9,7 +9,13 @@ Overview
 
 Ensemble Cross-validation is a Python package for performing specialized cross-validation on ensemble models, such as extrapolated cross-validation (ECV), generalized cross-validation (GCV), and etc. The implementation of ensemble models are based on scikit-learn.
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Introduction
 
+   readme_link.md
+
+   
 .. toctree::
    :maxdepth: 1
    :glob:
@@ -24,7 +30,7 @@ Ensemble Cross-validation is a Python package for performing specialized cross-v
    :glob:
    :caption: Tutorials
 
-   tutorial/basics.ipynb
-   tutorial/cgcv_l1_huber.ipynb
-   tutorial/multitask.ipynb
-   tutorial/random_forest.ipynb
+   tutorials/basics.ipynb
+   tutorials/cgcv_l1_huber.ipynb
+   tutorials/multitask.ipynb
+   tutorials/random_forest.ipynb
