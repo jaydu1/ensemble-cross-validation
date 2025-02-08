@@ -394,7 +394,7 @@ def ECV(
         res_risk[i, :] = np.r_[res]
 
     if return_df:
-        cols = np.char.add(['risk_val-']*n_M_max, np.char.mod('%d', 1+np.arange(n_M_max)))
+        cols = np.char.add(['risk_val-']*n_M_max, np.char.mod('%d', 1+np.arange(n_M_max))).tolist()
         if np.isinf(M_max[-1]):
             cols[-1] = 'risk_val-inf'
         if test:
@@ -498,7 +498,11 @@ def comp_empirical_gcv(
     else:
         risk_gcv = regr.compute_gcv_estimate(X_train, Y_train, M0, type, n_jobs=n_jobs, **kwargs_est)
 
-    risk_gcv = regr.extrapolate(risk_gcv, M_max)
+    if M>1:
+        risk_gcv = regr.extrapolate(risk_gcv, M_max)
+    else:
+        warnings.warn('The ensemble size is less than 2. The GCV estimate is not computed.')
+        risk_gcv = np.r_[risk_gcv, np.full(len(M_max)-M, np.nan)]
     
     if X_test is not None and Y_test is not None:        
         risk_val = regr.compute_risk(X_test, Y_test, M, n_jobs=n_jobs, **kwargs_est)
@@ -573,7 +577,7 @@ def GCV(
         res_risk[i, :] = np.r_[res]
 
     if return_df:
-        cols = np.char.add(['risk_val-']*n_M_max, np.char.mod('%d', 1+np.arange(n_M_max)))
+        cols = np.char.add(['risk_val-']*n_M_max, np.char.mod('%d', 1+np.arange(n_M_max))).tolist()
         if np.isinf(M_max[-1]):
             cols[-1] = 'risk_val-inf'
         if test:
