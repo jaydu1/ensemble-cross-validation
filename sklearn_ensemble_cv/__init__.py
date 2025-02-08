@@ -6,10 +6,9 @@ from sklearn_ensemble_cv.cross_validation import *
 from sklearn_ensemble_cv.ensemble import Ensemble
 from sklearn_ensemble_cv.utils import reset_random_seeds
 from sklearn_ensemble_cv.simu_data import generate_data
-
+from sklearn_ensemble_cv.__about__ import __version__
 
 __license__ = "MIT"
-__version__ = "0.2.4"
 __author__ = "Jin-Hong Du"
 __email__ = "jinhongd@andrew.cmu.edu"
 __maintainer__ = "Jin-Hong Du"

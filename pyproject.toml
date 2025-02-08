@@ -1,5 +1,58 @@
 [build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel", "hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools_scm]
+[tool.hatch.build.targets.sdist]
+only-packages = true
+include = ["sklearn_ensemble_cv"]
+exclude = ["/docs", "/tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sklearn_ensemble_cv"]
+
+
+[project]
+name = "sklearn_ensemble_cv"
+dynamic = ["version"]
+requires-python = ">= 3.6"
+dependencies = [
+    "pip",
+    "numpy",
+    "numba",
+    "pandas",
+    "scikit-learn",
+    "tqdm",
+    "joblib"
+]
+authors = [
+  {name = "Jin-Hong Du", email = "jinhongd@andrew.cmu.com"}
+]
+maintainers = [
+  {name = "Jin-Hong Du", email = "jinhongd@andrew.cmu.com"}
+]
+description = "Ensemble Cross-validation is a Python package for performing specialized " 
+    "cross-validation on ensemble models, such as extrapolated cross-validation (ECV), "
+    "generalized cross-validation (GCV), and etc. The implementation of ensemble models are "
+    "based on scikit-learn."
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {text = "MIT License"}
+
+classifiers = [
+
+    "Programming Language :: Python :: 3",
+
+    "License :: OSI Approved :: MIT License",
+
+    "Intended Audience :: Developers",
+
+    # Add more classifiers as needed
+
+] 
+
+
+
+[tool.hatch.version]
+path = "sklearn_ensemble_cv/__about__.py"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
