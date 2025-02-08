@@ -1,4 +1,4 @@
-
+[![Documentation Status](https://readthedocs.org/projects/sklearn-ensemble-cv/badge/?version=latest)](https://sklearn-ensemble-cv.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/sklearn_ensemble_cv?label=pypi)](https://pypi.org/project/sklearn-ensemble-cv)
 [![PyPI-Downloads](https://img.shields.io/pepy/dt/sklearn_ensemble_cv)](https://pepy.tech/project/sklearn_ensemble_cv)
 
@@ -40,7 +40,7 @@ It currently supports bagging- and subagging-type ensembles under square loss.
 The hyperparameters of the base predictor are listed at [`sklearn.tree.DecisionTreeRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html) and the hyperparameters of the ensemble are listed at [`sklearn.ensemble.BaggingRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html).
 Using other sklearn Regressors (`regr.is_regressor = True`) as base predictors is also supported.
 
-# Cross-validation methods
+## Cross-validation methods
 
 This project is currently in development. More CV methods will be added shortly.
 
@@ -52,7 +52,7 @@ This project is currently in development. More CV methods will be added shortly.
 - [x] CGCV non-square loss
 - [ ] ALOCV
 
-# Usage
+## Usage
 
 
 
