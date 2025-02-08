@@ -54,26 +54,24 @@ This project is currently in development. More CV methods will be added shortly.
 
 ## Usage
 
-
-
-
-Check out Jupyter Notebooks in the [tutorials](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials) folder:
-
-Name | Description
----|---
-[basics.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/basics.ipynb) | Basics about how to apply ECV/CGCV on risk estimation and hyperparameter tuning for ensemble learning.
-[cgcv_l1_huber.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/cgcv_l1_huber.ipynb) | Custom CGCV for M-estimator: l1-regularized Huber ensembles.
-[multitask.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/multitask.ipynb) | Apply ECV on risk estimation and hyperparameter tuning for multi-task ensemble learning.
-[random_forests.ipynb](https://github.com/jaydu1/ensemble-cross-validation/blob/main/tutorials/random_forests.ipynb) | Apply ECV on model selection of random forests via a simple utility function.
-
-The code is tested with `scikit-learn == 1.3.1`.
-
-The [document](https://jaydu1.github.io/overparameterized-ensembling/sklearn-ensemble-cv/docs/index) is available.
-
 The module can be installed via PyPI:
 ```cmd
 pip install sklearn-ensemble-cv
 ```
+
+The [document](https://sklearn-ensemble-cv.readthedocs.io/en/latest/?badge=latest) is available.
+Check out Jupyter Notebook tutorials in the [document](https://sklearn-ensemble-cv.readthedocs.io/en/latest/?badge=latest):
+
+Name | Description
+---|---
+[basics](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/basics.html) | Basics about how to apply ECV/CGCV on risk estimation and hyperparameter tuning for ensemble learning.
+[cgcv_l1_huber](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/cgcv_l1_huber.html) | Custom CGCV for M-estimator: l1-regularized Huber ensembles.
+[multitask](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/multitask.html) | Apply ECV on risk estimation and hyperparameter tuning for multi-task ensemble learning.
+[random_forests](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/random_forests.html) | Apply ECV on model selection of random forests via a simple utility function.
+
+The code is tested with `scikit-learn == 1.3.1`.
+
+
 
 
 
