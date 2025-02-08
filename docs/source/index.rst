@@ -15,7 +15,7 @@ Ensemble Cross-validation is a Python package for performing specialized cross-v
 
    readme_link.md
 
-   
+
 .. toctree::
    :maxdepth: 1
    :glob:
@@ -33,4 +33,4 @@ Ensemble Cross-validation is a Python package for performing specialized cross-v
    tutorials/basics.ipynb
    tutorials/cgcv_l1_huber.ipynb
    tutorials/multitask.ipynb
-   tutorials/random_forest.ipynb
+   tutorials/random_forests.ipynb
