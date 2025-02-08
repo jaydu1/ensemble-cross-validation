@@ -65,6 +65,7 @@ Check out Jupyter Notebook tutorials in the [document](https://sklearn-ensemble-
 Name | Description
 ---|---
 [basics](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/basics.html) | Basics about how to apply ECV/CGCV on risk estimation and hyperparameter tuning for ensemble learning.
+[gcv](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/gcv.html) | CCV for tuning regularization parameters for non-ensemble ridge, lasso, and elastic net.
 [cgcv_l1_huber](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/cgcv_l1_huber.html) | Custom CGCV for M-estimator: l1-regularized Huber ensembles.
 [multitask](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/multitask.html) | Apply ECV on risk estimation and hyperparameter tuning for multi-task ensemble learning.
 [random_forests](https://sklearn-ensemble-cv.readthedocs.io/en/latest/tutorials/random_forests.html) | Apply ECV on model selection of random forests via a simple utility function.
